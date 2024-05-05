@@ -12,12 +12,12 @@ This Python script is designed for cryptocurrency miners who need to track and m
 - **Configurable**: All settings are managed through a `config.json` file, making it easy to add or remove wallets without altering the script code.
 
 ## Prerequisites
-Before you run this script, ensure you have the following:
+Before you want to run this script yourself, ensure you have the following:
 - Python 3.6 or higher
 - `requests` library installed in your Python environment
 
 ## Setup
-To set up the script, follow these steps:
+To set up the script, checkout the release [here](https://github.com/Exohayvan/zpool.ca-discord-webhook/releases/tag/Initial) or follow these steps to run the script on your own:
 
 1. **Clone the Repository**:
    ```bash

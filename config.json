@@ -1,0 +1,8 @@
+[
+    {
+        "wallet_address": "payout_address",
+        "webhook_url": "discord_webhook_url",
+        "coin": "ravencoin",
+        "ticker": "RVN"
+    }
+]

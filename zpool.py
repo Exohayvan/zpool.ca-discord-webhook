@@ -84,29 +84,67 @@ def calculate_average_hashrate(history, key):
         return total / len(history[key])
     return 0
 
-def send_to_webhook(webhook_url, stats, aggregated_hashrates, worker_counts, hashrate_history, coin_to_usd, ticker):
-    """Send formatted data to a Discord webhook, including USD prices."""
-    balance_usd = float(stats['balance']) * coin_to_usd
-    unsold_usd = float(stats['unsold']) * coin_to_usd
-    paid24h_usd = float(stats['paid24h']) * coin_to_usd
-    paidtotal_usd = float(stats['paidtotal']) * coin_to_usd
+import requests
 
-    content = (
-        f"**Wallet Balance Update:**\n"
-        f"Balance: {stats['balance']} {ticker} (${balance_usd:.2f})\n"
-        f"Pending (Unsold): {stats['unsold']} {ticker} (${unsold_usd:.2f})\n"
-        f"Earned last 24h: {stats['paid24h']} {ticker} (${paid24h_usd:.2f})\n"
-        f"Total Earned: {stats['paidtotal']} {ticker} (${paidtotal_usd:.2f})\n\n"
-        f"**Worker Stats:**"
-    )
+def format_hashrate(value):
+    """Format hashrate values with appropriate suffixes."""
+    if value < 1e3:
+        return f"{value:.2f} H/s"
+    elif value < 1e6:
+        return f"{value / 1e3:.2f} kH/s"
+    elif value < 1e9:
+        return f"{value / 1e6:.2f} MH/s"
+    elif value < 1e12:
+        return f"{value / 1e9:.2f} GH/s"
+    else:
+        return f"{value / 1e12:.2f} TH/s"
+
+def calculate_average_hashrate(history, key):
+    """Calculate the average hashrate from the history."""
+    if key in history and len(history[key]) > 0:
+        total = sum(item['hashrate'] for item in history[key])
+        return total / len(history[key])
+    return 0
+
+def send_to_webhook(webhook_url, stats, aggregated_hashrates, worker_counts, hashrate_history, coin_to_usd, ticker):
+    """Send formatted data to a Discord webhook, using a consolidated embed with fields set to inline."""
+    # Fields are set up in pairs to appear in two lines
+    fields = [
+        {"name": "Balance", "value": f"{stats['balance']} {ticker} (${float(stats['balance']) * coin_to_usd:.2f})", "inline": True},
+        {"name": "Pending (Unsold)", "value": f"{stats['unsold']} {ticker} (${float(stats['unsold']) * coin_to_usd:.2f})", "inline": True},
+        {"name": "\u200b", "value": "\u200b", "inline": True},  # This is an invisible field to force a new line
+        {"name": "Earned last 24h", "value": f"{stats['paid24h']} {ticker} (${float(stats['paid24h']) * coin_to_usd:.2f})", "inline": True},
+        {"name": "Total Earned", "value": f"{stats['paidtotal']} {ticker} (${float(stats['paidtotal']) * coin_to_usd:.2f})", "inline": True},
+        {"name": "\u200b", "value": "\u200b", "inline": True}  # This is an invisible field to force a new line
+    ]
+
+    # Check if there is an error and add it to the fields
+    if 'error' in stats:
+        fields.append({"name": "Error Message", "value": stats['error'], "inline": False})
+
+    # Additional fields for worker stats
+    worker_stats = ""
     for key, hashrate in aggregated_hashrates.items():
         algo = key
         workers = worker_counts[key]
         current_hashrate = format_hashrate(hashrate)
         average_hashrate = format_hashrate(calculate_average_hashrate(hashrate_history, key))
-        content += f"\n- {algo} - {workers} workers\n*Current: {current_hashrate} | 24hr Avg: {average_hashrate}*"
+        worker_stats += f"**{algo} - {workers} workers**\n*Current: {current_hashrate} | 24hr Avg: {average_hashrate}*\n"
+    
+    if worker_stats:
+        fields.append({"name": "Worker Stats", "value": worker_stats, "inline": False})
 
-    data = {"content": content, "username": "Zpool Stats"}
+    embed = {
+        "title": "Mining Stats Overview",
+        "fields": fields,
+        "color": 5814783  # You can customize the color
+    }
+
+    # Prepare the request payload
+    data = {
+        "embeds": [embed],
+        "username": "Zpool Stats"
+    }
     headers = {'Content-Type': 'application/json'}
     response = requests.post(webhook_url, json=data, headers=headers)
     return response.status_code, response.text

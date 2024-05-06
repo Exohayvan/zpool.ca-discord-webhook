@@ -118,9 +118,10 @@ def send_to_webhook(webhook_url, stats, aggregated_hashrates, worker_counts, has
         {"name": "\u200b", "value": "\u200b", "inline": True}  # This is an invisible field to force a new line
     ]
 
-    # Check if there is an error and add it to the fields
-    if 'error' in stats:
+    # Check if there is an error and it's not an empty string, then add it to the fields
+    if 'error' in stats and stats['error'].strip():
         fields.append({"name": "Error Message", "value": stats['error'], "inline": False})
+
 
     # Additional fields for worker stats
     worker_stats = ""

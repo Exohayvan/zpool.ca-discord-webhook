@@ -66,7 +66,7 @@ Edit the `config.json` file to include your wallet addresses, webhook URLs, and 
 To use this script, simply run it in your terminal or command prompt:
 
 ```bash
-python crypto_mining_stats_webhook.py
+python zpool.py
 ```
 
 The script will continue running and send updates every 10 minutes. To stop the script, press `Ctrl+C` in your terminal.
